@@ -70,11 +70,11 @@ const char *getStatusName(Status status)
   case NORMAL:
     return "NORMAL";
   case ATTENTION:
-    return "ATTENTION";
+    return "CUIDADO";
   case CRITICAL:
-    return "CRITICAL";
+    return "GRAVE";
   default:
-    return "UNKNOWN";
+    return "DESCONHECIDO";
   }
 }
 
@@ -170,29 +170,29 @@ void printReasons(const SensorData &data)
 {
   if (data.autonomy <= DAYS_CRITICAL)
   {
-    Serial.println("[CRITICO]  Estoque crítico! Autonomia: " + String(data.autonomy, 2) + " dias");
+    Serial.println("[GRAVE]  Estoque crítico! Autonomia: " + String(data.autonomy, 2) + " dias");
   }
   if (data.autonomy <= DAYS_WARNING && data.autonomy > DAYS_CRITICAL)
   {
-    Serial.println("[ATENCAO]  Estoque baixo! Autonomia: " + String(data.autonomy, 2) + " dias");
+    Serial.println("[CUIDADO]  Estoque baixo! Autonomia: " + String(data.autonomy, 2) + " dias");
   }
 
   if (data.temperature >= TEMP_CRITICAL)
   {
-    Serial.println("[CRITICO]  Temperatura crítica! Temperatura: " + String(data.temperature, 2) + " °C");
+    Serial.println("[GRAVE]  Temperatura crítica! Temperatura: " + String(data.temperature, 2) + " °C");
   }
   if (data.temperature >= TEMP_WARNING && data.temperature < TEMP_CRITICAL)
   {
-    Serial.println("[ATENCAO]  Temperatura alta! Temperatura: " + String(data.temperature, 2) + " °C");
+    Serial.println("[CUIDADO]  Temperatura alta! Temperatura: " + String(data.temperature, 2) + " °C");
   }
 
   if (data.humidity >= HUM_CRITICAL)
   {
-    Serial.println("[CRITICO]  Umidade crítica! Umidade: " + String(data.humidity, 2) + " %");
+    Serial.println("[GRAVE]  Umidade crítica! Umidade: " + String(data.humidity, 2) + " %");
   }
   if (data.humidity >= HUM_WARNING && data.humidity < HUM_CRITICAL)
   {
-    Serial.println("[ATENCAO]  Umidade alta! Umidade: " + String(data.humidity, 2) + " %");
+    Serial.println("[CUIDADO]  Umidade alta! Umidade: " + String(data.humidity, 2) + " %");
   }
 }
 
@@ -206,27 +206,20 @@ void updateDisplay(Status status, const SensorData &data)
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
-
   display.setCursor(0, 0);
 
   display.println("SMARTPANTRY");
   display.println("---------------------");
 
-  display.printf("Status: ", String(getStatusName(status)));
+  display.printf("Status: %s\n", getStatusName(status));
 
-  display.printf("Peso: %.2f g\n", data.weight);
+  display.printf("Peso: %.2f kg\n", data.weight);
 
-  display.printf(
-      "Temp: %.1f C\n",
-      data.temperature);
+  display.printf("Temp: %.1f C\n", data.temperature);
 
-  display.printf(
-      "Umid: %.1f %%\n",
-      data.humidity);
+  display.printf("Umid: %.1f %%\n", data.humidity);
 
-  display.printf(
-      "Estoque: %.1f dias\n",
-      data.autonomy);
+  display.printf("Estoque: %.1f dias\n", data.autonomy);
 
   display.display();
 }
@@ -239,23 +232,23 @@ void printSerial(
   Serial.println("========================");
 
   Serial.printf(
-      "Status: %s\n",
+      "Status: %s\r\n",
       getStatusName(status));
 
   Serial.printf(
-      "Peso: %.2f kg\n",
+      "Peso: %.2f kg\r\n",
       data.weight);
 
   Serial.printf(
-      "Temperatura: %.1f C\n",
+      "Temperatura: %.1f C\r\n",
       data.temperature);
 
   Serial.printf(
-      "Umidade: %.1f %%\n",
+      "Umidade: %.1f %%\r\n",
       data.humidity);
 
   Serial.printf(
-      "Autonomia: %.2f dias\n",
+      "Autonomia: %.2f dias\r\n",
       data.autonomy);
 
   if (status != NORMAL)
@@ -264,6 +257,7 @@ void printSerial(
   }
 
   Serial.println("========================");
+  Serial.println();
 }
 
 void handleSensorError()
@@ -272,7 +266,7 @@ void handleSensorError()
   updateActuators(CRITICAL);
 
   Serial.println("========================");
-  Serial.println("STATUS: CRITICO");
+  Serial.println("STATUS: GRAVE");
   Serial.println("Falha na leitura dos sensores");
   Serial.println("Verifique as conexoes");
   Serial.println("========================");
@@ -285,7 +279,7 @@ void handleSensorError()
 
     display.println("SMARTPANTRY");
     display.println("---------------------");
-    display.println("STATUS: CRITICO");
+    display.println("STATUS: GRAVE");
     display.println("Falha nos sensores");
     display.println("Verifique o circuito");
 
@@ -346,7 +340,7 @@ void setup()
 
   Serial.println("========================");
   Serial.println("SMARTPANTRY");
-  Serial.println("Sistema inicializado");
+  Serial.println("Sistema inicializado!");
   Serial.println("========================");
 
   delay(2000);
