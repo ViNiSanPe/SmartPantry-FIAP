@@ -25,7 +25,7 @@ O projeto foi desenvolvido individualmente para a atividade substitutiva da **Gl
 - leitura de peso com HX711 e célula de carga;
 - leitura de temperatura e umidade com DHT22;
 - estimativa de autonomia com base no consumo diário configurado;
-- classificação do cenário como `NORMAL`, `ATTENTION` ou `CRITICAL`;
+- classificação do cenário como `NORMAL`, `CUIDADO` ou `GRAVE`;
 - indicação visual por LEDs verde, amarelo e vermelho;
 - alerta sonoro em estado crítico;
 - exibição das medições no OLED SSD1306;
@@ -62,7 +62,7 @@ O consumo diário usado na demonstração é `0,3` unidade de peso por dia, defi
 
 O status geral corresponde à condição de maior gravidade encontrada entre autonomia, temperatura e umidade.
 
-| Indicador | `NORMAL` | `ATTENTION` | `CRITICAL` |
+| Indicador | `NORMAL` | `CUIDADO` | `GRAVE` |
 |---|---:|---:|---:|
 | Autonomia | acima de 5 dias | acima de 2 e até 5 dias | até 2 dias |
 | Temperatura | abaixo de 30 °C | de 30 °C a menos de 40 °C | 40 °C ou mais |
@@ -71,8 +71,8 @@ O status geral corresponde à condição de maior gravidade encontrada entre aut
 | Status | LED | Buzzer |
 |---|---|---|
 | `NORMAL` | verde | desligado |
-| `ATTENTION` | amarelo | desligado |
-| `CRITICAL` | vermelho | tom de 1 kHz por 500 ms a cada ciclo |
+| `CUIDADO` | amarelo | desligado |
+| `GRAVE` | vermelho | tom de 1 kHz por 500 ms a cada ciclo |
 
 As leituras são atualizadas a cada 5 segundos. Os limites ambientais são parâmetros experimentais da demonstração acadêmica e não substituem critérios técnicos de conservação ou segurança alimentar.
 
@@ -150,12 +150,12 @@ O arquivo [`wokwi.toml`](wokwi.toml) carrega automaticamente os artefatos gerado
 
 ```text
 ========================
-Status: ATTENTION
+Status: CUIDADO
 Peso: 1.20 kg
 Temperatura: 25.0 C
 Umidade: 50.0 %
 Autonomia: 4.00 dias
-[ATENCAO]  Estoque baixo! Autonomia: 4.00 dias
+[CUIDADO]  Estoque baixo! Autonomia: 4.00 dias
 ========================
 ```
 
@@ -169,9 +169,10 @@ Em **27 de novembro de 2026**, o firmware foi compilado com sucesso no ambiente 
 |---|---|
 | Compilação do firmware | sucesso |
 | Uso de RAM | 23.960 bytes de 327.680 bytes — 7,3% |
-| Uso de flash | 317.035 bytes de 1.310.720 bytes — 24,2% |
+| Uso de flash | 316.891 bytes de 1.310.720 bytes — 24,2% |
+| Erros e avisos de compilação | nenhum |
 
-A compilação emite um aviso na formatação da linha de status do OLED. Esse aviso não impede a geração do firmware; as medições continuam sendo exibidas e o status permanece disponível pelos LEDs e pelo Monitor Serial.
+O status e as medições são apresentados no OLED e no Monitor Serial. A versão atual foi compilada sem erros ou avisos.
 
 ## Status do projeto
 
