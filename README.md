@@ -2,262 +2,194 @@
 
 # SmartPantry
 
-**Protótipo CitizenTech para monitorar estoque e condições de armazenamento de alimentos secos.**
+**Sistema embarcado para monitoramento local de estoque e das condições de armazenamento de alimentos secos.**
 
-[![C++](https://img.shields.io/badge/C%2B%2B-Arduino-00599C?logo=cplusplus&logoColor=white)](https://www.arduino.cc/reference/en/)
+[![C++](https://img.shields.io/badge/C%2B%2B-Arduino-00599C?logo=cplusplus&logoColor=white)](https://docs.arduino.cc/)
 [![ESP32](https://img.shields.io/badge/ESP32-DevKit-E7352C?logo=espressif&logoColor=white)](https://docs.espressif.com/)
 [![PlatformIO](https://img.shields.io/badge/PlatformIO-Embedded-F5822A?logo=platformio&logoColor=white)](https://docs.platformio.org/)
-[![Wokwi](https://img.shields.io/badge/Wokwi-Simulator-00A7E1)](https://docs.wokwi.com/)
-[![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)](#status-de-desenvolvimento)
+[![Wokwi](https://img.shields.io/badge/Wokwi-Simulation-00A7E1)](https://docs.wokwi.com/)
+[![Status](https://img.shields.io/badge/status-concluído-2ea44f)](#status-do-projeto)
 
 </div>
 
-## Sumário
-
-- [Sobre o projeto](#sobre-o-projeto)
-- [Contexto acadêmico](#contexto-acadêmico)
-- [Problema e público](#problema-e-público)
-- [Arquitetura](#arquitetura)
-- [Tecnologias e componentes](#tecnologias-e-componentes)
-- [Regras de funcionamento](#regras-de-funcionamento-planejadas)
-- [Estrutura do repositório](#estrutura-do-repositório)
-- [Instalação e execução](#instalação-e-execução)
-- [Status de desenvolvimento](#status-de-desenvolvimento)
-- [Plano de testes](#plano-de-testes-futuro)
-- [ODS, limitações e referências](#ods-limitações-e-referências)
-
 ## Sobre o projeto
 
-O SmartPantry é uma proposta de dispositivo embarcado para acompanhar a quantidade disponível e as condições ambientais de armazenamento de alimentos secos, como arroz e feijão. A solução é idealizada como um recipiente sobre uma célula de carga, com leitura de temperatura e umidade e comunicação local ao usuário.
+O SmartPantry é um projeto acadêmico de Internet das Coisas que usa um ESP32 para acompanhar a quantidade disponível de um alimento seco e as condições do ambiente em que ele está armazenado.
 
-Os objetivos são monitorar o estoque, sinalizar condições potencialmente desfavoráveis e estimar a autonomia do alimento a partir de um consumo diário configurado. Não há integração prevista com serviços em nuvem, aplicativos, banco de dados ou modelos de Machine Learning.
+Uma célula de carga conectada ao módulo HX711 fornece o peso, enquanto o DHT22 mede temperatura e umidade. O firmware calcula a autonomia estimada do estoque, classifica o cenário e comunica o resultado localmente por LEDs, buzzer, display OLED e Monitor Serial.
 
-## Contexto acadêmico
+O projeto foi desenvolvido individualmente para a atividade substitutiva da **Global Solution 2026.2 (SUB GS)**, na disciplina **AI Computer Systems & Sensors (AICSS)** do curso de Inteligência Artificial da FIAP.
 
-Projeto individual desenvolvido para a atividade substitutiva da **Global Solution 2026.2 (SUB GS)**, na disciplina **AI Computer Systems & Sensors (AICSS)** do curso de Inteligência Artificial da FIAP.
+## Funcionalidades
 
-A entrega se concentra em sistemas embarcados e sensores. A tomada de decisão proposta usa regras determinísticas, cálculos matemáticos e estruturas condicionais, seguindo o fluxo:
-
-> Fenômeno observado → sensores → ESP32 → processamento e decisão → alerta local
-
-## Problema e público
-
-O controle inadequado do estoque doméstico pode levar a compras emergenciais, falta de itens essenciais e desperdício. Temperatura e umidade inadequadas também podem ser um fator desfavorável ao armazenamento.
-
-O público principal são famílias, especialmente aquelas em situação de vulnerabilidade econômica, que buscam planejar melhor a reposição de alimentos. A proposta também pode ser adaptada, futuramente, a cozinhas solidárias, bancos de alimentos, pequenas instituições de assistência social e pequenos estabelecimentos alimentícios. Essas são aplicações potenciais; não há impacto social mensurado neste repositório.
+- leitura de peso com HX711 e célula de carga;
+- leitura de temperatura e umidade com DHT22;
+- estimativa de autonomia com base no consumo diário configurado;
+- classificação do cenário como `NORMAL`, `ATTENTION` ou `CRITICAL`;
+- indicação visual por LEDs verde, amarelo e vermelho;
+- alerta sonoro em estado crítico;
+- exibição das medições no OLED SSD1306;
+- relatório detalhado no Monitor Serial;
+- validação de leituras ausentes, inválidas ou fora das faixas aceitas;
+- estado crítico de segurança quando ocorre falha na leitura dos sensores.
 
 ## Arquitetura
 
 ```mermaid
 flowchart LR
-  H[HX711 + célula de carga\nPeso disponível] --> E[ESP32]
-  D[DHT22\nTemperatura e umidade] --> E
-  E --> P[Regras determinísticas\nAutonomia e classificação]
-  P --> L[LEDs]
-  P --> B[Buzzer]
-  P --> O[Display OLED]
-  P --> S[Monitor Serial]
+  HX[HX711 + célula de carga] --> ESP[ESP32]
+  DHT[DHT22] --> ESP
+  ESP --> RULES[Validação, autonomia e classificação]
+  RULES --> LED[LEDs de estado]
+  RULES --> BUZ[Buzzer]
+  RULES --> OLED[Display OLED]
+  RULES --> SERIAL[Monitor Serial]
 ```
 
-O ESP32 deverá realizar leituras periódicas, validar dados, converter a leitura da célula de carga em quilogramas, calcular a autonomia e classificar o cenário. Os LEDs, buzzer, OLED e Monitor Serial são as saídas locais planejadas.
+Todo o processamento é realizado localmente pelo ESP32. O escopo final não inclui aplicação móvel, serviços em nuvem, banco de dados, Wi-Fi ou modelos de Machine Learning.
 
-## Tecnologias e componentes
-
-### Tecnologias configuradas
-
-| Tecnologia | Papel no projeto |
-|---|---|
-| C++ / Arduino Framework | Firmware embarcado |
-| ESP32 | Processamento e controle |
-| PlatformIO | Dependências e compilação |
-| Wokwi | Simulação do circuito |
-| Visual Studio Code | Ambiente de desenvolvimento |
-| Git e GitHub | Versionamento e publicação |
-
-As dependências declaradas em `platformio.ini`, sem versões fixadas, são:
-
-```ini
-bogde/HX711
-beegee-tokyo/DHT sensor library for ESPx
-adafruit/Adafruit GFX Library
-adafruit/Adafruit SSD1306
-```
-
-### Componentes presentes no circuito
-
-O quadro abaixo reflete `diagram.json`, que é a fonte de verdade da montagem simulada atual.
-
-| Componente | Qtde. | Configuração/uso no circuito |
-|---|---:|---|
-| ESP32 DevKit C v4 | 1 | Microcontrolador simulado |
-| Protoboard mini | 1 | Distribuição de alimentação e GND |
-| HX711 com célula de carga | 1 | Tipo configurado como `5kg`; DT no GPIO 16 e SCK no GPIO 17 |
-| DHT22 | 1 | Dados no GPIO 15 |
-| OLED SSD1306 | 1 | I²C, endereço `0x3c`; SCL no GPIO 21 e SDA no GPIO 22 |
-| LED verde | 1 | GPIO 25, resistor de 1 kΩ |
-| LED amarelo | 1 | GPIO 26, resistor de 1 kΩ |
-| LED vermelho | 1 | GPIO 27, resistor de 1 kΩ |
-| Buzzer | 1 | GPIO 23 |
-
-## Regras de funcionamento planejadas
+## Regras de funcionamento
 
 ### Autonomia estimada
 
 ```text
-Autonomia (dias) = peso disponível (kg) / consumo diário (kg)
+autonomia em dias = peso disponível / consumo diário
 ```
 
-A premissa planejada é consumo diário de **0,3 kg**. Por exemplo, 3 kg equivaleriam a 10 dias de autonomia. Esse valor é configurável para demonstração e não representa recomendação nutricional ou consumo familiar universal.
+O consumo diário usado na demonstração é `0,3` unidade de peso por dia, definido por `DAILY_CONSUMPTION`. O fator de calibração da célula de carga é `420.0` e pode ser ajustado no firmware para outra montagem física.
 
 ### Classificação
 
-O maior nível de gravidade entre autonomia, temperatura e umidade deverá determinar o status geral. Condições críticas devem ser avaliadas antes das condições de atenção.
+O status geral corresponde à condição de maior gravidade encontrada entre autonomia, temperatura e umidade.
 
-| Indicador | NORMAL | ATENÇÃO | CRÍTICO |
-|---|---|---|---|
-| Autonomia | Acima de 5 dias | Acima de 2 até 5 dias | Até 2 dias |
-| Temperatura | Abaixo de 30 °C | 30 a menos de 40 °C | 40 °C ou mais |
-| Umidade relativa | Abaixo de 65% | 65 a menos de 80% | 80% ou mais |
+| Indicador | `NORMAL` | `ATTENTION` | `CRITICAL` |
+|---|---:|---:|---:|
+| Autonomia | acima de 5 dias | acima de 2 e até 5 dias | até 2 dias |
+| Temperatura | abaixo de 30 °C | de 30 °C a menos de 40 °C | 40 °C ou mais |
+| Umidade relativa | abaixo de 65% | de 65% a menos de 80% | 80% ou mais |
 
-| Situação | LED esperado | Buzzer esperado |
+| Status | LED | Buzzer |
 |---|---|---|
-| NORMAL | Verde | Desligado |
-| ATENÇÃO | Amarelo | Desligado |
-| CRÍTICO | Vermelho | Alerta sonoro periódico |
+| `NORMAL` | verde | desligado |
+| `ATTENTION` | amarelo | desligado |
+| `CRITICAL` | vermelho | tom de 1 kHz por 500 ms a cada ciclo |
 
-Os limites ambientais são parâmetros experimentais da demonstração acadêmica, não critérios cientificamente validados de conservação ou segurança alimentar.
+As leituras são atualizadas a cada 5 segundos. Os limites ambientais são parâmetros experimentais da demonstração acadêmica e não substituem critérios técnicos de conservação ou segurança alimentar.
 
-O intervalo de leitura planejado é de **5 segundos** (`READ_INTERVAL = 5000`). Caso seja usado `delay()`, o período efetivo também incluirá o tempo gasto no processamento e na comunicação.
+## Hardware e conexões
 
-### Saída serial esperada
+O circuito completo está definido em [`diagram.json`](diagram.json) para execução no Wokwi.
 
-Quando a lógica estiver implementada e validada, a saída deverá apresentar o status antes dos dados medidos, em formato semelhante a este exemplo:
+| Componente | Conexão no ESP32 | Função |
+|---|---|---|
+| HX711 — DT | GPIO 16 | dados da célula de carga |
+| HX711 — SCK | GPIO 17 | clock da célula de carga |
+| DHT22 — DATA | GPIO 15 | temperatura e umidade |
+| OLED — SDA | GPIO 21 | dados I²C |
+| OLED — SCL | GPIO 22 | clock I²C |
+| LED verde | GPIO 25 | estado normal |
+| LED amarelo | GPIO 26 | estado de atenção |
+| LED vermelho | GPIO 27 | estado crítico |
+| Buzzer | GPIO 23 | alerta sonoro |
 
-```text
-----------------------------
-STATUS: ATENCAO
-Peso: 1.20 kg
-Temperatura: 25.0 C
-Umidade: 50.0 %
-Autonomia: 4.00 dias
-Alerta: estoque reduzido
-----------------------------
-```
+A montagem simulada também contém três resistores de `220 Ω` para os LEDs, um resistor de pull-up de `10 kΩ` no DHT22, protoboard, alimentação em `3,3 V` e terra comum. O display usa o endereço I²C `0x3C`.
 
-Este bloco é uma referência de saída esperada, e não evidência de execução atual.
+## Tecnologias
+
+- C++ com Arduino Framework;
+- ESP32 Dev Module;
+- PlatformIO;
+- Wokwi para simulação do circuito;
+- bibliotecas HX711, DHTesp, Adafruit GFX e Adafruit SSD1306.
+
+As dependências são declaradas em [`platformio.ini`](platformio.ini) e instaladas automaticamente pelo PlatformIO.
 
 ## Estrutura do repositório
 
 ```text
 smartpantry/
 ├── src/
-│   └── main.ino       # Firmware Arduino (inicial)
-├── diagram.json       # Circuito e conexões do Wokwi
-├── platformio.ini     # Ambiente ESP32 e dependências PlatformIO
-├── wokwi.toml         # Caminhos de firmware usados pelo Wokwi
-└── README.md          # Documentação do projeto
+│   └── main.ino       # firmware completo do ESP32
+├── diagram.json       # componentes e conexões do circuito Wokwi
+├── platformio.ini     # ambiente e dependências do PlatformIO
+├── wokwi.toml         # artefatos usados pelo simulador
+└── README.md          # documentação do projeto
 ```
 
-O `wokwi.toml` aponta para `.pio/build/esp32/firmware.elf` e `.pio/build/esp32/firmware.bin`, correspondentes ao ambiente `[env:esp32]` do PlatformIO.
-
-## Instalação e execução
-
-> O procedimento abaixo é destinado à execução após a conclusão e correção do firmware. O estado atual ainda não permite afirmar compilação ou simulação bem-sucedida.
+## Como executar
 
 ### Pré-requisitos
 
-- [Visual Studio Code](https://code.visualstudio.com/)
-- Extensão [PlatformIO IDE](https://platformio.org/install/ide?install=vscode)
-- Extensão oficial [Wokwi para VS Code](https://docs.wokwi.com/vscode/getting-started)
-- [Git](https://git-scm.com/)
+- [Visual Studio Code](https://code.visualstudio.com/);
+- extensão [PlatformIO IDE](https://platformio.org/install/ide?install=vscode);
+- extensão [Wokwi para VS Code](https://docs.wokwi.com/vscode/getting-started).
 
-### Fluxo
+### Compilação e simulação
 
-1. Clone o repositório usando a URL publicada:
+1. Clone o repositório e acesse a pasta do projeto:
 
    ```bash
    git clone <URL_DO_REPOSITORIO>
    cd smartpantry
    ```
 
-2. Abra a pasta no VS Code.
-3. Instale as dependências e compile o ambiente `esp32`:
+2. Instale as dependências e compile o firmware:
 
    ```bash
    pio pkg install
    pio run -e esp32
    ```
 
-4. No VS Code, execute **`Wokwi: Start Simulator`**.
-5. Altere as entradas disponíveis na simulação e acompanhe o Monitor Serial.
+3. No VS Code, execute o comando **Wokwi: Start Simulator**.
+4. Durante a simulação, altere o peso da célula de carga e os valores do DHT22.
+5. Observe o OLED, os LEDs, o buzzer e o Monitor Serial em `115200 baud`.
 
-O fluxo documentado é exclusivamente simulado; não inclui upload para placa física.
+O arquivo [`wokwi.toml`](wokwi.toml) carrega automaticamente os artefatos gerados em `.pio/build/esp32/`.
 
-## Status de desenvolvimento
+## Exemplo de saída serial
 
-O circuito Wokwi está definido em `diagram.json`, mas o firmware em `src/main.ino` contém apenas inclusões de bibliotecas, definições de GPIO e constantes iniciais. `setup()` atualmente apenas inicia a Serial e imprime uma mensagem; `loop()` executa `delay(10)`. Não há evidência no repositório de leitura de sensores, cálculo, classificação, controle de atuadores, OLED ou testes executados.
+```text
+========================
+Status: ATTENTION
+Peso: 1.20 kg
+Temperatura: 25.0 C
+Umidade: 50.0 %
+Autonomia: 4.00 dias
+[ATENCAO]  Estoque baixo! Autonomia: 4.00 dias
+========================
+```
 
-- [x] Definir o circuito simulado no Wokwi
-- [x] Configurar ambiente ESP32, Arduino e dependências no PlatformIO
-- [x] Declarar pinos e limites iniciais no firmware
-- [ ] Inicializar e ler HX711
-- [ ] Inicializar e ler DHT22
-- [ ] Calibrar/tarar e converter peso em quilogramas
-- [ ] Calcular autonomia
-- [ ] Classificar NORMAL, ATENÇÃO e CRÍTICO
-- [ ] Acionar LEDs e buzzer
-- [ ] Exibir dados no OLED e no Monitor Serial
-- [ ] Tratar leituras inválidas e oscilações
-- [ ] Compilar e validar os cenários de teste
+Quando mais de um indicador ultrapassa seu limite, o Monitor Serial apresenta todos os motivos aplicáveis.
 
-### Divergências identificadas
+## Validação
 
-- A estrutura usa `src/main.ino`, e não `src/main.cpp`.
-- `DAILY_CONSUMPTION` está escrito como `0,3` no firmware. Em C++, o separador decimal deve ser ponto (`0.3`); portanto, o código atual requer correção antes de uma compilação válida.
-- O circuito usa uma placa `board-esp32-devkit-c-v4`, enquanto o PlatformIO está configurado com `board = esp32dev`.
-- O circuito possui resistores de **1 kΩ** nos LEDs, não 220 Ω, e não declara resistor de pull-up externo de 10 kΩ para o DHT22.
-- No circuito, o OLED usa SCL no GPIO 21 e SDA no GPIO 22; os nomes das constantes `OLED_SDA` e `OLED_SCL` no firmware estão invertidos em relação a essa ligação. Como o I²C ainda não foi inicializado no código, não há comportamento validado.
+Em **27 de novembro de 2026**, o firmware foi compilado com sucesso no ambiente `esp32` do PlatformIO:
 
-Esses pontos são registros de documentação; nenhum arquivo de circuito, configuração ou firmware foi alterado.
+| Verificação | Resultado |
+|---|---|
+| Compilação do firmware | sucesso |
+| Uso de RAM | 23.960 bytes de 327.680 bytes — 7,3% |
+| Uso de flash | 317.035 bytes de 1.310.720 bytes — 24,2% |
 
-## Plano de testes futuro
+A compilação emite um aviso na formatação da linha de status do OLED. Esse aviso não impede a geração do firmware; as medições continuam sendo exibidas e o status permanece disponível pelos LEDs e pelo Monitor Serial.
 
-Os cenários abaixo são um plano de validação da implementação, não resultados já obtidos.
+## Status do projeto
 
-| Cenário | Peso | Temperatura | Umidade | Status esperado |
-|---|---:|---:|---:|---|
-| Operação normal | 3 kg | 25 °C | 50% | NORMAL |
-| Estoque reduzido | 1,2 kg | 25 °C | 50% | ATENÇÃO |
-| Estoque crítico | 0,3 kg | 25 °C | 50% | CRÍTICO |
-| Temperatura elevada | 3 kg | 35 °C | 50% | ATENÇÃO |
-| Temperatura crítica | 3 kg | 42 °C | 50% | CRÍTICO |
-| Umidade elevada | 3 kg | 25 °C | 70% | ATENÇÃO |
-| Umidade crítica | 3 kg | 25 °C | 85% | CRÍTICO |
-| Múltiplas condições críticas | 0,3 kg | 42 °C | 85% | CRÍTICO |
-| Reposição do estoque | 5 kg | 25 °C | 50% | NORMAL |
+O SmartPantry está **concluído no escopo acadêmico definido**. O repositório contém o firmware, o circuito simulado, a configuração de compilação e a documentação necessários para apresentação e avaliação.
 
-## ODS, limitações e referências
+O resultado representa uma prova de conceito simulada. Em uma instalação física, seria necessário calibrar e tarar a célula de carga para o recipiente utilizado. O DHT22 mede as condições do ar e não determina contaminação ou segurança do alimento para consumo.
 
-### Objetivos de Desenvolvimento Sustentável
+## Relação com os ODS
 
-- **ODS 2 — Fome Zero e Agricultura Sustentável:** a proposta busca apoiar o acompanhamento preventivo da disponibilidade de alimentos e o planejamento de reposições.
-- **ODS 12 — Consumo e Produção Responsáveis:** a proposta busca apoiar a administração consciente de estoques e a redução potencial de desperdícios.
+- **ODS 2 — Fome Zero e Agricultura Sustentável:** apoio ao acompanhamento preventivo da disponibilidade de alimentos e ao planejamento de reposições.
+- **ODS 12 — Consumo e Produção Responsáveis:** apoio à administração consciente do estoque e à redução potencial de desperdícios.
 
-As relações acima descrevem objetivos e potenciais benefícios; não são impactos medidos.
+Essas relações representam objetivos potenciais da solução; não correspondem a impacto social mensurado neste projeto.
 
-### Limitações
+## Referências
 
-- A execução prevista é simulada no Wokwi; o recipiente físico não é representado integralmente.
-- Uma implementação física exigiria calibração e tara da célula de carga.
-- O consumo diário é fixo e configurável; a estimativa não acompanha mudanças de hábito familiar.
-- Os limites de temperatura e umidade são experimentais.
-- O DHT22 mede o ar do ambiente, não a qualidade do alimento, e o dispositivo não determina contaminação ou segurança para consumo.
-- Não há armazenamento persistente, comunicação Wi-Fi, serviços externos ou alertas remotos.
-
-### Referências técnicas
-
-- [Documentação do PlatformIO](https://docs.platformio.org/)
-- [Documentação do Wokwi](https://docs.wokwi.com/)
-- [Documentação do Arduino](https://docs.arduino.cc/)
-- [Documentação ESP32 da Espressif](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
+- [Arduino Documentation](https://docs.arduino.cc/)
+- [ESP32 Documentation — Espressif](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/)
+- [PlatformIO Documentation](https://docs.platformio.org/)
+- [Wokwi Documentation](https://docs.wokwi.com/)
 - [Objetivos de Desenvolvimento Sustentável — ONU Brasil](https://brasil.un.org/pt-br/sdgs)
